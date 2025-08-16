@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>E-Com Realtime Analytics Dashboard</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:24px}
+    h1{margin-bottom:8px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+    .card{border:1px solid #e0e0e0;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+    .muted{color:#666;font-size:13px}.kpi{font-size:42px;font-weight:700}.row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    input[type=text]{padding:8px 10px;border-radius:8px;border:1px solid #ddd;width:200px}
+    table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+    .footer{margin-top:18px}.badge{background:#f4f4f4;padding:2px 6px;border-radius:6px;font-size:12px}
+  </style>
+</head>
+<body>
+  <h1>Realtime Analytics</h1>
+  <div class="muted">Auto-refreshes every 30s. Windows: Active Users <span th:text="${auWin}">5</span>m · Top Pages <span th:text="${pvWin}">15</span>m · Sessions <span th:text="${asWin}">5</span>m</div>
+  <div class="grid" style="margin-top:16px;">
+    <div class="card">
+      <div class="row"><h2>Active Users</h2><span class="badge">/metrics/active_users</span></div>
+      <div class="kpi" id="activeUsers">0</div>
+      <div class="muted">Unique users in the last <span th:text="${auWin}">5</span> minutes.</div>
+    </div>
+    <div class="card">
+      <div class="row"><h2>Top 5 Pages</h2><span class="badge">/metrics/top_pages</span></div>
+      <table>
+        <thead><tr><th>Page URL</th><th style="width:120px;">Views</th></tr></thead>
+        <tbody id="topPages"></tbody>
+      </table>
+      <div class="muted footer">Aggregated over the last <span th:text="${pvWin}">15</span> minutes.</div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <h2>Active Sessions (per user)</h2>
+        <span class="badge">/metrics/active_sessions?user_id=...</span>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label for="userId">User ID:&nbsp;</label>
+        <input type="text" id="userId" placeholder="usr_101" />
+      </div>
+      <div class="kpi" id="activeSessions">0</div>
+      <div class="muted footer">Number of live sessions in the last <span th:text="${asWin}">5</span> minutes.</div>
+    </div>
+  </div>
+  <script>
+    const topPagesEl=document.getElementById('topPages');
+    const activeUsersEl=document.getElementById('activeUsers');
+    const activeSessionsEl=document.getElementById('activeSessions');
+    const userIdInput=document.getElementById('userId');
+    function fetchActiveUsers(){fetch('/metrics/active_users').then(r=>r.json()).then(d=>{activeUsersEl.innerText=d.active_users??0;}).catch(()=>{});}
+    function fetchTopPages(){fetch('/metrics/top_pages').then(r=>r.json()).then(d=>{const items=d.top_pages||[];topPagesEl.innerHTML=items.map(it=>`<tr><td>${it.page_url}</td><td>${it.views}</td></tr>`).join('');}).catch(()=>{});}
+    function fetchActiveSessions(){const uid=userIdInput.value||'usr_101';fetch(`/metrics/active_sessions?user_id=${encodeURIComponent(uid)}`).then(r=>r.json()).then(d=>{activeSessionsEl.innerText=d.active_sessions??0;}).catch(()=>{});}
+    function refreshAll(){fetchActiveUsers();fetchTopPages();fetchActiveSessions();}
+    userIdInput.value='usr_101';refreshAll();setInterval(refreshAll,30000);
+    userIdInput.addEventListener('change',fetchActiveSessions);
+    userIdInput.addEventListener('keyup',(e)=>{if(e.key==='Enter')fetchActiveSessions();});
+  </script>
+</body>
+</html>
