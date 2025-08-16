@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      APP_RATE_LIMIT_PER_SEC: "100"
+      APP_ACTIVE_USER_WINDOW_MIN: "5"
+      APP_ACTIVE_SESSION_WINDOW_MIN: "5"
+      APP_PAGEVIEW_WINDOW_MIN: "15"
+    depends_on: [redis]
+    ports: ["8080:8080"]
+
+  generator:
+    build: ./generator
+    profiles: ["gen"]
+    environment:
+      TARGET_URL: http://backend:8080/events
+      RPS: "40"
+      USERS: "usr_101,usr_102,usr_103,usr_104,usr_105,usr_106,usr_107,usr_108,usr_109,usr_110"
+      PAGES: "/,/home,/products/electronics,/products/fashion,/products/books,/cart,/checkout"
+      SESSION_VARIANCE: "0.25"
+    depends_on: [backend]

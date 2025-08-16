@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: analytics
+  thymeleaf:
+    cache: false
+
+app:
+  rate-limit-per-sec: ${APP_RATE_LIMIT_PER_SEC:100}
+  active-user-window-min: ${APP_ACTIVE_USER_WINDOW_MIN:5}
+  active-session-window-min: ${APP_ACTIVE_SESSION_WINDOW_MIN:5}
+  pageview-window-min: ${APP_PAGEVIEW_WINDOW_MIN:15}
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+app:
+  redis:
+    host: redis
+    port: 6379
